@@ -1,0 +1,11 @@
+error: parse alias `Red` of variant `AlsoRed` conflicts with an alias of variant `Red` [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/use_phf_conflict.rs:7:25
+  |
+7 |     #[strum(serialize = "Red")]
+  |                         ^^^^^
+
+error: alias `Red` of variant `Red` defined here; to allow conflicting aliases, add `#[strum(alias_conflict = "first_wins")]` to the enum (the first declared variant wins) [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/use_phf_conflict.rs:6:5
+  |
+6 |     Red,
+  |     ^^^

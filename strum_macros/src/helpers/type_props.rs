@@ -10,12 +10,35 @@ pub trait HasTypeProperties {
     fn get_type_properties(&self) -> syn::Result<StrumTypeProperties>;
 }
 
+/// How `EnumString` should proceed when two variants accept the same input alias.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AliasConflictStrategy {
+    /// Keep generating code; the variant declared first wins the parse.
+    FirstWins,
+}
+
+impl std::str::FromStr for AliasConflictStrategy {
+    type Err = ();
+
+    fn from_str(text: &str) -> Result<Self, ()> {
+        match text {
+            "first_wins" => Ok(AliasConflictStrategy::FirstWins),
+            _ => Err(()),
+        }
+    }
+}
+
+impl AliasConflictStrategy {
+    pub const VALID_VALUES: &'static [&'static str] = &["first_wins"];
+}
+
 #[derive(Clone, Default)]
 pub struct StrumTypeProperties {
     pub parse_err_ty: Option<Path>,
     pub parse_err_fn: Option<Path>,
     pub case_style: Option<CaseStyle>,
     pub ascii_case_insensitive: bool,
+    pub alias_conflict: Option<AliasConflictStrategy>,
     pub crate_module_path: Option<Path>,
     pub discriminant_derives: Vec<Path>,
     pub discriminant_name: Option<Ident>,
@@ -39,6 +62,7 @@ impl HasTypeProperties for DeriveInput {
         let mut parse_err_fn_kw = None;
         let mut serialize_all_kw = None;
         let mut ascii_case_insensitive_kw = None;
+        let mut alias_conflict_kw = None;
         let mut use_phf_kw = None;
         let mut crate_module_path_kw = None;
         let mut prefix_kw = None;
@@ -62,6 +86,23 @@ impl HasTypeProperties for DeriveInput {
 
                     ascii_case_insensitive_kw = Some(kw);
                     output.ascii_case_insensitive = true;
+                }
+                EnumMeta::AliasConflict { kw, strategy } => {
+                    if let Some(fst_kw) = alias_conflict_kw {
+                        return Err(occurrence_error(fst_kw, kw, "alias_conflict"));
+                    }
+
+                    alias_conflict_kw = Some(kw);
+                    output.alias_conflict = Some(strategy.value().parse().map_err(|_| {
+                        syn::Error::new_spanned(
+                            &strategy,
+                            format!(
+                                "Unexpected alias_conflict strategy: `{}`. Valid values are: `{:?}`",
+                                strategy.value(),
+                                AliasConflictStrategy::VALID_VALUES
+                            ),
+                        )
+                    })?);
                 }
                 EnumMeta::UsePhf(kw) => {
                     if let Some(fst_kw) = use_phf_kw {

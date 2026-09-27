@@ -1,0 +1,11 @@
+error: parse alias `red` of variant `AlsoRed` conflicts with an alias of variant `Red` [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/serialize_vs_to_string.rs:7:25
+  |
+7 |     #[strum(to_string = "red")]
+  |                         ^^^^^
+
+error: alias `red` of variant `Red` defined here; to allow conflicting aliases, add `#[strum(alias_conflict = "first_wins")]` to the enum (the first declared variant wins) [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/serialize_vs_to_string.rs:5:25
+  |
+5 |     #[strum(serialize = "red")]
+  |                         ^^^^^

@@ -50,6 +50,15 @@
 //! - You can also apply the `#[strum(ascii_case_insensitive)]` attribute to the enum,
 //!   and this has the same effect of applying it to every variant.
 //!
+//! - `#[strum(alias_conflict = "first_wins")]` opts in to an explicit priority
+//!   strategy for `EnumString` parse-alias conflicts. Without it, two variants
+//!   that accept the same input alias are a compile-time error pointing at both
+//!   attributes (reason codes `strum::alias_conflict::exact` /
+//!   `strum::alias_conflict::ascii_case`). With `first_wins`, the first declared
+//!   variant wins and shadowed aliases are dropped from the generated lookup.
+//!   Alias normalization is ASCII-only (`eq_ignore_ascii_case` semantics);
+//!   non-ASCII aliases are compared byte-for-byte.
+//!
 //! ## Attributes on Variants
 //!
 //! Custom attributes are applied to a variant by adding `#[strum(parameter="value")]` to the variant.

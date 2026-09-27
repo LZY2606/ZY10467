@@ -1,0 +1,11 @@
+error: parse alias `black` of variant `AlsoBlack` conflicts with an alias of variant `Black` [strum::alias_conflict::ascii_case]
+ --> tests/ui/alias_conflict/ascii_case_insensitive_enum_level.rs:8:25
+  |
+8 |     #[strum(serialize = "black")]
+  |                         ^^^^^^^
+
+error: alias `Black` of variant `Black` defined here; to allow conflicting aliases, add `#[strum(alias_conflict = "first_wins")]` to the enum (the first declared variant wins) [strum::alias_conflict::ascii_case]
+ --> tests/ui/alias_conflict/ascii_case_insensitive_enum_level.rs:6:25
+  |
+6 |     #[strum(serialize = "Black")]
+  |                         ^^^^^^^

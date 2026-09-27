@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+* `EnumString`: conflicting parse aliases across variants are now a
+  compile-time error pointing at both attributes, with stable reason codes
+  (`strum::alias_conflict::exact` / `strum::alias_conflict::ascii_case`).
+  Normalization is ASCII-only, matching `eq_ignore_ascii_case`. Duplicate
+  aliases on the same variant are merged, and the new enum-level
+  `#[strum(alias_conflict = "first_wins")]` attribute opts in to explicit
+  first-declared-wins priority (consistent between `match` and `use_phf`).
+  See `docs/alias-conflict-diagnostics.md`.
+
 ## 0.28.0
 
 * [#461](https://github.com/Peternator7/strum/pull/461): Allow any kind of passthrough attributes on `EnumDiscriminants`.

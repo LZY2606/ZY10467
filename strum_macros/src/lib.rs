@@ -57,6 +57,33 @@ fn debug_print_generated(ast: &DeriveInput, toks: &TokenStream) {
 /// rather than just assume it will be faster. With SIMD + pipelining, linear string search (aka memcmp)
 /// can be very fast for enums with a surprisingly large number of enum variants.
 ///
+/// # Alias Conflicts
+///
+/// Before any match code is generated, the macro computes the normalized set of
+/// parse aliases (every `serialize`/`to_string` value, or the case-converted
+/// variant name when neither is given). Two aliases of *different* variants
+/// conflict when they can match the same input, and a conflict is a
+/// compile-time error that points at both attribute locations and carries a
+/// stable reason code:
+///
+/// - `strum::alias_conflict::exact` — the aliases are byte-identical.
+/// - `strum::alias_conflict::ascii_case` — the aliases only differ by ASCII
+///   case and at least one of the variants is `ascii_case_insensitive`.
+///
+/// Normalization is limited to ASCII case folding, mirroring the generated
+/// matcher which uses `eq_ignore_ascii_case`. Unicode case folding is
+/// intentionally out of scope: non-ASCII aliases are compared byte-for-byte,
+/// exactly like the runtime matcher compares them. Duplicate aliases on the
+/// *same* variant are allowed and merged. `disabled` variants and the
+/// `default` variant register no parse aliases, and `prefix`/`suffix` only
+/// apply to display-oriented derives, so none of them participate in
+/// conflicts. The rule is identical with and without `use_phf`.
+///
+/// To generate code anyway, opt in to an explicit priority strategy with
+/// `#[strum(alias_conflict = "first_wins")]` on the enum: the first declared
+/// variant wins the parse, and shadowed aliases are dropped from the
+/// generated `match`/`phf` lookup so both stay consistent.
+///
 /// # Infallible Parsing
 ///
 /// If the enum has a `#[strum(default)]` variant and no `parse_err_ty` is set, parsing is

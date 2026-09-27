@@ -1,0 +1,11 @@
+error: parse alias `café` of variant `AlsoCoffee` conflicts with an alias of variant `Coffee` [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/unicode_exact_duplicate.rs:7:25
+  |
+7 |     #[strum(serialize = "café")]
+  |                         ^^^^^^
+
+error: alias `café` of variant `Coffee` defined here; to allow conflicting aliases, add `#[strum(alias_conflict = "first_wins")]` to the enum (the first declared variant wins) [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/unicode_exact_duplicate.rs:5:25
+  |
+5 |     #[strum(serialize = "café")]
+  |                         ^^^^^^

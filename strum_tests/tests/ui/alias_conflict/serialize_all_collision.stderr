@@ -1,0 +1,11 @@
+error: parse alias `dark_black` of variant `Other` conflicts with an alias of variant `DarkBlack` [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/serialize_all_collision.rs:7:25
+  |
+7 |     #[strum(serialize = "dark_black")]
+  |                         ^^^^^^^^^^^^
+
+error: alias `dark_black` of variant `DarkBlack` defined here; to allow conflicting aliases, add `#[strum(alias_conflict = "first_wins")]` to the enum (the first declared variant wins) [strum::alias_conflict::exact]
+ --> tests/ui/alias_conflict/serialize_all_collision.rs:6:5
+  |
+6 |     DarkBlack,
+  |     ^^^^^^^^^

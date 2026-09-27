@@ -3,8 +3,8 @@ use quote::quote;
 use syn::{Data, DeriveInput, Fields};
 
 use crate::helpers::{
-    missing_parse_err_attr_error, non_enum_error, occurrence_error, HasInnerVariantProperties,
-    HasStrumVariantProperties, HasTypeProperties,
+    alias_conflicts::build_alias_registry, missing_parse_err_attr_error, non_enum_error,
+    occurrence_error, HasInnerVariantProperties, HasStrumVariantProperties, HasTypeProperties,
 };
 
 pub fn from_string_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
@@ -23,11 +23,18 @@ pub fn from_string_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
         return Err(missing_parse_err_attr_error());
     }
 
+    // Compute the normalized alias set before generating any match code so
+    // that alias conflicts are reported as diagnostics pointing at both
+    // attributes instead of surfacing as unreachable match arms or `phf`
+    // duplicate-key errors.
+    let alias_registry = build_alias_registry(variants, &type_properties)?;
+
     let mut default_kw = None;
     let mut default_match_arm = None;
 
     let mut phf_exact_match_arms = Vec::new();
     let mut standard_match_arms = Vec::new();
+    let mut serialization_index = 0;
     for variant in variants {
         let ident = &variant.ident;
         let variant_properties = variant.get_variant_properties()?;
@@ -104,25 +111,53 @@ pub fn from_string_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
 
         // If we don't have any custom variants, add the default serialized name.
         for serialization in variant_properties.get_serializations(type_properties.case_style) {
+            let index = serialization_index;
+            serialization_index += 1;
+
             if type_properties.use_phf {
-                phf_exact_match_arms.push(quote! { #serialization => #name::#ident #params, });
+                // Keys of a single case-insensitive serialization can
+                // collapse onto each other (e.g. an already-lowercase alias);
+                // merge those duplicates as well.
+                let mut emitted_keys = std::collections::HashSet::new();
+                let mut push_phf_key = |key: syn::LitStr| {
+                    if emitted_keys.insert(key.value().clone())
+                        && !alias_registry.exact_shadowed_before(index, &key.value())
+                    {
+                        phf_exact_match_arms.push(quote! { #key => #name::#ident #params, });
+                    }
+                };
+
+                push_phf_key(serialization.clone());
 
                 if is_ascii_case_insensitive {
                     // Store the lowercase and UPPERCASE variants in the phf map to capture
                     let ser_string = serialization.value();
 
-                    let lower =
-                        syn::LitStr::new(&ser_string.to_ascii_lowercase(), serialization.span());
-                    let upper =
-                        syn::LitStr::new(&ser_string.to_ascii_uppercase(), serialization.span());
-                    phf_exact_match_arms.push(quote! { #lower => #name::#ident #params, });
-                    phf_exact_match_arms.push(quote! { #upper => #name::#ident #params, });
-                    standard_match_arms.push(quote! { s if s.eq_ignore_ascii_case(#serialization) => #name::#ident #params, });
+                    push_phf_key(syn::LitStr::new(
+                        &ser_string.to_ascii_lowercase(),
+                        serialization.span(),
+                    ));
+                    push_phf_key(syn::LitStr::new(
+                        &ser_string.to_ascii_uppercase(),
+                        serialization.span(),
+                    ));
+
+                    if !alias_registry
+                        .ci_shadowed_before(index, &ser_string.to_ascii_lowercase())
+                    {
+                        standard_match_arms.push(quote! { s if s.eq_ignore_ascii_case(#serialization) => #name::#ident #params, });
+                    }
                 }
             } else if !is_ascii_case_insensitive {
-                standard_match_arms.push(quote! { #serialization => #name::#ident #params, });
+                if !alias_registry.exact_shadowed_before(index, &serialization.value()) {
+                    standard_match_arms.push(quote! { #serialization => #name::#ident #params, });
+                }
             } else {
-                standard_match_arms.push(quote! { s if s.eq_ignore_ascii_case(#serialization) => #name::#ident #params, });
+                if !alias_registry
+                    .ci_shadowed_before(index, &serialization.value().to_ascii_lowercase())
+                {
+                    standard_match_arms.push(quote! { s if s.eq_ignore_ascii_case(#serialization) => #name::#ident #params, });
+                }
             }
         }
     }
