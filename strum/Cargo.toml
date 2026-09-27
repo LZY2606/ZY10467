@@ -17,7 +17,7 @@ rust-version = "1.71"
 
 [dependencies]
 strum_macros = { path = "../strum_macros", optional = true, version = "0.28" }
-phf = { version = "0.13", features = ["macros"], optional = true }
+phf = { version = "0.14", features = ["macros"], optional = true }
 
 [dev-dependencies]
 strum_macros = { path = "../strum_macros" }
