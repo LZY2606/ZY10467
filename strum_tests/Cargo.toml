@@ -1,0 +1,17 @@
+[package]
+name = "strum_tests"
+version = "0.28.0"
+edition = "2021"
+authors = ["Peter Glotfelty <peglotfe@microsoft.com>"]
+rust-version = "1.71"
+
+[features]
+default = []
+test_phf = ["strum/phf"]
+
+[dependencies]
+strum = { path = "../strum", features = ["derive"] }
+strum_macros = { path = "../strum_macros", features = [] }
+clap = "=4.2.7"
+enum_variant_type = "=0.2.0"
+structopt = "=0.3.26"

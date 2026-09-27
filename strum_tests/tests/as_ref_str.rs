@@ -1,0 +1,269 @@
+#![allow(deprecated)]
+
+use std::str::FromStr;
+use strum::{AsRefStr, AsStaticRef, AsStaticStr, Display, EnumString, IntoStaticStr};
+
+mod core {} // ensure macros call `::core`
+
+#[derive(Debug, Eq, PartialEq, EnumString, AsRefStr, AsStaticStr, IntoStaticStr, Default)]
+enum InnerColor {
+    #[default]
+    Purple,
+    Violet,
+    Fuchsia,
+}
+
+#[derive(Debug, Eq, PartialEq, EnumString, AsRefStr, AsStaticStr, IntoStaticStr)]
+enum Color {
+    #[strum(to_string = "RedRed")]
+    Red,
+    #[strum(serialize = "b", to_string = "blue")]
+    Blue { hue: usize },
+    #[strum(serialize = "y", serialize = "yellow")]
+    Yellow,
+    #[strum(default)]
+    Green(String),
+    #[strum(transparent)]
+    Inner(InnerColor),
+    #[strum(transparent)]
+    InnerField { inner: InnerColor },
+}
+
+#[test]
+fn as_red_str() {
+    assert_eq!("RedRed", (Color::Red).as_ref());
+    assert_eq!(Color::Red, Color::from_str((Color::Red).as_ref()).unwrap());
+}
+
+#[test]
+fn as_blue_str() {
+    assert_eq!("blue", (Color::Blue { hue: 0 }).as_ref());
+    let _: &'static str = (Color::Blue { hue: 0 }).as_static();
+}
+
+#[test]
+fn as_yellow_str() {
+    assert_eq!("yellow", (Color::Yellow).as_ref());
+    let _: &'static str = (Color::Yellow).as_static();
+}
+
+#[test]
+fn as_green_str() {
+    assert_eq!("Green", (Color::Green(String::default())).as_ref());
+    let _: &'static str = (Color::Green(String::default())).as_static();
+}
+
+#[test]
+fn as_fuchsia_str() {
+    assert_eq!("Purple", (Color::Inner(InnerColor::Purple)).as_ref());
+    assert_eq!(
+        "Purple",
+        (Color::InnerField {
+            inner: InnerColor::Purple
+        })
+        .as_ref()
+    );
+}
+
+#[derive(IntoStaticStr)]
+enum Foo<'a> {
+    A,
+    #[allow(dead_code)]
+    C(&'a i32),
+}
+
+#[derive(IntoStaticStr)]
+enum Boo<'a, T> {
+    A(T),
+    B,
+    #[allow(dead_code)]
+    C(&'a i32),
+}
+
+#[derive(IntoStaticStr)]
+enum Moo<'a, T>
+where
+    T: AsRef<str>,
+{
+    A(T),
+    B,
+    #[allow(dead_code)]
+    C(&'a i32),
+}
+
+#[test]
+fn test_into_static_str() {
+    assert_eq!("RedRed", <&'static str>::from(Color::Red));
+    assert_eq!("blue", <&'static str>::from(Color::Blue { hue: 0 }));
+    assert_eq!("yellow", <&'static str>::from(Color::Yellow));
+
+    assert_eq!("RedRed", <&'static str>::from(&Color::Red));
+    assert_eq!("blue", <&'static str>::from(&Color::Blue { hue: 0 }));
+    assert_eq!("yellow", <&'static str>::from(&Color::Yellow));
+    assert_eq!(
+        "Purple",
+        <&'static str>::from(&Color::Inner(InnerColor::Purple))
+    );
+
+    assert_eq!("A", <&'static str>::from(Foo::A));
+    assert_eq!("C", <&'static str>::from(Foo::C(&17)));
+
+    assert_eq!("A", <&'static str>::from(Boo::A(17)));
+    assert_eq!("B", <&'static str>::from(Boo::B::<i32>));
+    assert_eq!("C", <&'static str>::from(Boo::C::<i32>(&17)));
+
+    assert_eq!("A", <&'static str>::from(Moo::A::<String>("aaa".into())));
+    assert_eq!("B", <&'static str>::from(Moo::B::<String>));
+    assert_eq!("C", <&'static str>::from(Moo::C::<String>(&17)));
+}
+
+#[derive(Debug, Eq, PartialEq, AsRefStr, AsStaticStr, IntoStaticStr)]
+#[strum(serialize_all = "snake_case")]
+enum Brightness {
+    DarkBlack,
+    Dim {
+        glow: usize,
+    },
+    #[strum(serialize = "Bright")]
+    BrightWhite,
+    #[strum(transparent)]
+    Gray(&'static str),
+    #[strum(transparent)]
+    Grey {
+        inner: &'static str,
+    },
+}
+
+#[test]
+fn brightness_serialize_all() {
+    assert_eq!("dark_black", Brightness::DarkBlack.as_ref());
+    assert_eq!("dim", Brightness::Dim { glow: 0 }.as_ref());
+    assert_eq!("Bright", Brightness::BrightWhite.as_ref());
+
+    assert_eq!("dark_black", Brightness::DarkBlack.as_static());
+    assert_eq!("dim", Brightness::Dim { glow: 0 }.as_static());
+    assert_eq!("Bright", Brightness::BrightWhite.as_static());
+
+    assert_eq!("dark_black", <&'static str>::from(Brightness::DarkBlack));
+    assert_eq!("dim", <&'static str>::from(Brightness::Dim { glow: 0 }));
+    assert_eq!("Bright", <&'static str>::from(Brightness::BrightWhite));
+    assert_eq!("Gray", <&'static str>::from(Brightness::Gray("Gray")));
+    assert_eq!(
+        "Grey",
+        <&'static str>::from(Brightness::Grey { inner: "Grey" })
+    );
+}
+
+#[derive(IntoStaticStr)]
+#[strum(const_into_str)]
+enum Bar<'a, T>
+where
+    T: AsRef<str>,
+{
+    A(T),
+    B,
+    #[allow(dead_code)]
+    C(&'a i32),
+    #[strum(serialize = "Dark")]
+    D,
+    #[strum(to_string = "Green")]
+    G,
+    #[strum(serialize = "b", to_string = "blue")]
+    Blue {
+        #[allow(dead_code)]
+        hue: usize,
+    },
+    #[strum(serialize = "y", serialize = "yellow")]
+    Yellow,
+}
+
+#[derive(IntoStaticStr)]
+#[strum(const_into_str)]
+enum Baz<'a, T> {
+    A(T),
+    #[allow(dead_code)]
+    C(&'a i32),
+}
+
+#[derive(IntoStaticStr)]
+#[strum(serialize_all = "snake_case")]
+#[strum(const_into_str)]
+enum BrightnessConst {
+    DarkBlack,
+    Dim {
+        #[allow(dead_code)]
+        glow: usize,
+    },
+    #[strum(serialize = "Bright")]
+    BrightWhite,
+}
+
+#[test]
+fn test_const_into_static_str() {
+    const A: &str = Bar::A("foo").into_str();
+    assert_eq!("A", A);
+    const B: &str = Bar::B::<&str>.into_str();
+    assert_eq!("B", B);
+    const C: &str = Bar::C::<&str>(&12).into_str();
+    assert_eq!("C", C);
+
+    const D: &str = Bar::D::<&str>.into_str();
+    assert_eq!("Dark", D);
+
+    const G: &str = Bar::G::<&str>.into_str();
+    assert_eq!("Green", G);
+
+    const BLUE: &str = Bar::Blue::<&str> { hue: 2 }.into_str();
+    assert_eq!("blue", BLUE);
+
+    const YELLOW: &str = Bar::Yellow::<&str>.into_str();
+    assert_eq!("yellow", YELLOW);
+
+    const BAZ_A: &str = Baz::A("foo").into_str();
+    assert_eq!("A", BAZ_A);
+
+    const BAZ_C: &str = Baz::C::<&str>(&6).into_str();
+    assert_eq!("C", BAZ_C);
+
+    const DARK_BLACK: &str = BrightnessConst::DarkBlack.into_str();
+    assert_eq!("dark_black", DARK_BLACK);
+    const DIM: &str = BrightnessConst::Dim { glow: 1 }.into_str();
+    assert_eq!("dim", DIM);
+    const BRIGHT_WHITE: &str = BrightnessConst::BrightWhite.into_str();
+    assert_eq!("Bright", BRIGHT_WHITE);
+}
+
+#[derive(AsRefStr, Display, EnumString)]
+#[strum(prefix = "/etc/data/assets/", suffix = ".json")]
+enum Asset {
+    #[strum(serialize = "cfg", serialize = "configuration", to_string = "config")]
+    Config,
+    #[strum(serialize = "params")]
+    Params,
+    #[strum(default)]
+    Generic(String),
+}
+
+#[test]
+fn test_prefix_and_suffix() {
+    assert_eq!(
+        String::from("/etc/data/assets/config.json"),
+        (Asset::Config).to_string()
+    );
+    assert_eq!("/etc/data/assets/config.json", (Asset::Config).as_ref(),);
+
+    assert_eq!(
+        String::from("/etc/data/assets/params.json"),
+        (Asset::Params).to_string()
+    );
+    assert_eq!("/etc/data/assets/params.json", (Asset::Params).as_ref());
+
+    assert_eq!(
+        String::from("some-file"),
+        (Asset::Generic("some-file".into()).to_string()),
+    );
+    assert_eq!(
+        "/etc/data/assets/Generic.json",
+        (Asset::Generic("()".into()).as_ref()),
+    )
+}

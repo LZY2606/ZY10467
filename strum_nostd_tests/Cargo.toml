@@ -1,0 +1,9 @@
+[package]
+name = "strum_nostd_tests"
+version = "0.28.0"
+edition = "2021"
+rust-version = "1.71"
+
+[dependencies]
+strum = { path = "../strum", features = ["derive"] }
+strum_macros = { path = "../strum_macros", features = [] }
