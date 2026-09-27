@@ -1,6 +1,21 @@
 # Changelog
 
+## Unreleased
+
+* `EnumString` now detects conflicting input aliases at compile time, before any match code is
+  generated. Aliases of different variants conflict when some input string would match both
+  (exact equality, or ASCII-case-folded equality when either variant is `ascii_case_insensitive`;
+  normalization is ASCII-only, mirroring `eq_ignore_ascii_case`). Conflicts are reported with the
+  stable reason code `strum::alias_conflict`, pointing at both attribute locations. Duplicate
+  aliases on a single variant remain allowed and are merged. To keep a cross-variant conflict, opt
+  into an explicit priority strategy with `#[strum(on_alias_conflict = "first_wins")]`, which keeps
+  the first declared variant and deduplicates `use_phf` maps so both backends behave identically.
+  This also fixes `use_phf` failing with an opaque `duplicate key` error for case-insensitive
+  aliases that are already lowercase. See `docs/alias-conflict-diagnostics.md` for the design
+  notes.
+
 ## 0.28.0
+
 
 * [#461](https://github.com/Peternator7/strum/pull/461): Allow any kind of passthrough attributes on `EnumDiscriminants`.
   * Previously only list-style attributes (e.g. `#[strum_discriminants(derive(...))]`) were supported. Now path-only

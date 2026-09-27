@@ -1,0 +1,19 @@
+error: strum::alias_conflict: alias `foo_bar` of variant `Foo_Bar` conflicts with alias `foo_bar` of variant `FooBar`
+ --> tests/ui/alias_conflicts/ident_case_conversion_conflict.rs:8:5
+  |
+8 |     Foo_Bar,
+  |     ^^^^^^^
+
+error: conflicting alias is defined here
+ --> tests/ui/alias_conflicts/ident_case_conversion_conflict.rs:7:5
+  |
+7 |     FooBar,
+  |     ^^^^^^
+
+error: note: duplicate aliases on a single variant are allowed and merged; for cross-variant conflicts, add `#[strum(on_alias_conflict = "first_wins")]` to the enum to keep the first declared variant
+ --> tests/ui/alias_conflicts/ident_case_conversion_conflict.rs:3:17
+  |
+3 | #[derive(Debug, EnumString)]
+  |                 ^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `EnumString` (in Nightly builds, run with -Z macro-backtrace for more info)

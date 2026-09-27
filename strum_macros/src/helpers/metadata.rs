@@ -21,6 +21,7 @@ pub mod kw {
     custom_keyword!(suffix);
     custom_keyword!(parse_err_ty);
     custom_keyword!(parse_err_fn);
+    custom_keyword!(on_alias_conflict);
 
     // enum discriminant metadata
     custom_keyword!(derive);
@@ -69,6 +70,10 @@ pub enum EnumMeta {
         path: Path,
     },
     ConstIntoStr(kw::const_into_str),
+    OnAliasConflict {
+        kw: kw::on_alias_conflict,
+        strategy: LitStr,
+    },
 }
 
 impl Parse for EnumMeta {
@@ -115,6 +120,11 @@ impl Parse for EnumMeta {
             Ok(EnumMeta::ParseErrFn { kw, path })
         } else if lookahead.peek(kw::const_into_str) {
             Ok(EnumMeta::ConstIntoStr(input.parse()?))
+        } else if lookahead.peek(kw::on_alias_conflict) {
+            let kw = input.parse::<kw::on_alias_conflict>()?;
+            input.parse::<Token![=]>()?;
+            let strategy = input.parse()?;
+            Ok(EnumMeta::OnAliasConflict { kw, strategy })
         } else {
             Err(lookahead.error())
         }

@@ -1,0 +1,19 @@
+error: strum::alias_conflict: alias `red` of variant `Crimson` conflicts with alias `red` of variant `Red`
+ --> tests/ui/alias_conflicts/prefix_suffix_conflict.rs:8:25
+  |
+8 |     #[strum(to_string = "red")]
+  |                         ^^^^^
+
+error: conflicting alias is defined here
+ --> tests/ui/alias_conflicts/prefix_suffix_conflict.rs:6:25
+  |
+6 |     #[strum(serialize = "red")]
+  |                         ^^^^^
+
+error: note: duplicate aliases on a single variant are allowed and merged; for cross-variant conflicts, add `#[strum(on_alias_conflict = "first_wins")]` to the enum to keep the first declared variant
+ --> tests/ui/alias_conflicts/prefix_suffix_conflict.rs:3:17
+  |
+3 | #[derive(Debug, EnumString)]
+  |                 ^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `EnumString` (in Nightly builds, run with -Z macro-backtrace for more info)

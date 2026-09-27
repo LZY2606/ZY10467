@@ -26,6 +26,7 @@ pub struct StrumTypeProperties {
     pub suffix: Option<LitStr>,
     pub enum_repr: Option<TokenStream>,
     pub const_into_str: bool,
+    pub on_alias_conflict: Option<LitStr>,
 }
 
 impl HasTypeProperties for DeriveInput {
@@ -44,6 +45,7 @@ impl HasTypeProperties for DeriveInput {
         let mut prefix_kw = None;
         let mut suffix_kw = None;
         let mut const_into_str = None;
+        let mut on_alias_conflict_kw = None;
 
         for meta in strum_meta {
             match meta {
@@ -121,6 +123,14 @@ impl HasTypeProperties for DeriveInput {
 
                     const_into_str = Some(kw);
                     output.const_into_str = true;
+                }
+                EnumMeta::OnAliasConflict { kw, strategy } => {
+                    if let Some(fst_kw) = on_alias_conflict_kw {
+                        return Err(occurrence_error(fst_kw, kw, "on_alias_conflict"));
+                    }
+
+                    on_alias_conflict_kw = Some(kw);
+                    output.on_alias_conflict = Some(strategy);
                 }
             }
         }

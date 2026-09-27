@@ -1,0 +1,5 @@
+error: unknown `on_alias_conflict` strategy `last_wins`; expected "first_wins"
+ --> tests/ui/alias_conflicts/unknown_strategy.rs:4:29
+  |
+4 | #[strum(on_alias_conflict = "last_wins")]
+  |                             ^^^^^^^^^^^

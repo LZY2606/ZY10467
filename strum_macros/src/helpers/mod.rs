@@ -1,8 +1,10 @@
+pub use self::alias_conflicts::check_enum_string_aliases;
 pub use self::case_style::snakify;
 pub use self::inner_variant_props::HasInnerVariantProperties;
 pub use self::type_props::HasTypeProperties;
 pub use self::variant_props::HasStrumVariantProperties;
 
+pub mod alias_conflicts;
 pub mod case_style;
 pub mod inner_variant_props;
 mod metadata;

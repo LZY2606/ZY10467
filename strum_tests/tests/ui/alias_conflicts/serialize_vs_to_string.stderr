@@ -1,0 +1,19 @@
+error: strum::alias_conflict: alias `scarlet` of variant `Scarlet` conflicts with alias `scarlet` of variant `Red`
+ --> tests/ui/alias_conflicts/serialize_vs_to_string.rs:7:25
+  |
+7 |     #[strum(to_string = "scarlet")]
+  |                         ^^^^^^^^^
+
+error: conflicting alias is defined here
+ --> tests/ui/alias_conflicts/serialize_vs_to_string.rs:5:25
+  |
+5 |     #[strum(serialize = "scarlet")]
+  |                         ^^^^^^^^^
+
+error: note: duplicate aliases on a single variant are allowed and merged; for cross-variant conflicts, add `#[strum(on_alias_conflict = "first_wins")]` to the enum to keep the first declared variant
+ --> tests/ui/alias_conflicts/serialize_vs_to_string.rs:3:17
+  |
+3 | #[derive(Debug, EnumString)]
+  |                 ^^^^^^^^^^
+  |
+  = note: this error originates in the derive macro `EnumString` (in Nightly builds, run with -Z macro-backtrace for more info)

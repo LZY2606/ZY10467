@@ -57,6 +57,31 @@ fn debug_print_generated(ast: &DeriveInput, toks: &TokenStream) {
 /// rather than just assume it will be faster. With SIMD + pipelining, linear string search (aka memcmp)
 /// can be very fast for enums with a surprisingly large number of enum variants.
 ///
+/// # Alias Conflicts
+///
+/// Before any match code is generated, the macro computes the normalized set of *input aliases*
+/// of the enum: every `serialize`/`to_string` value and - for variants without either - the
+/// variant name converted through `serialize_all`. Aliases of `disabled` variants and `default`
+/// variants are not input aliases and are ignored. `prefix`/`suffix` only affect the display
+/// side and do not take part in parsing, so they are not part of the alias set either.
+///
+/// Two aliases of *different* variants conflict when some input string would match both:
+///
+/// * two case-sensitive aliases conflict iff they are exactly equal;
+/// * if either variant is `ascii_case_insensitive`, the aliases conflict iff their
+///   ASCII-lowercased forms are equal.
+///
+/// Normalization is deliberately limited to ASCII case folding, because the generated matcher
+/// (`str::eq_ignore_ascii_case`) is ASCII-only as well; Unicode case folding is out of scope, so
+/// aliases that differ only in non-ASCII case (e.g. `"Ä"` vs `"ä"`) are *not* a conflict.
+///
+/// A conflict is a compile error with the stable reason code `strum::alias_conflict`, pointing
+/// at both attribute locations. Duplicate aliases on a *single* variant are allowed and merged.
+/// To keep a cross-variant conflict, opt into an explicit priority strategy with
+/// `#[strum(on_alias_conflict = "first_wins")]` on the enum: the first declared variant wins
+/// (the same semantics the generated `match` already has), and `use_phf` maps are deduplicated
+/// accordingly so both backends behave identically.
+///
 /// # Infallible Parsing
 ///
 /// If the enum has a `#[strum(default)]` variant and no `parse_err_ty` is set, parsing is
